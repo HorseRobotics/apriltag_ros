@@ -343,6 +343,16 @@ AprilTagDetectionArray TagDetector::detectTags (
     tag_detection.pose = tag_pose;
     tag_detection.id.push_back(detection->id);
     tag_detection.size.push_back(tag_size);
+    for(int p=0; p<standaloneTagImagePoints.size(); p++) {
+      cv::Point3d objectPoint = standaloneTagObjectPoints[p];
+      tag_detection.object_points.push_back(objectPoint.x);
+      tag_detection.object_points.push_back(objectPoint.y);
+      tag_detection.object_points.push_back(objectPoint.z);
+      
+      cv::Point2d imagePoint = standaloneTagImagePoints[p];
+      tag_detection.image_points.push_back(imagePoint.x);
+      tag_detection.image_points.push_back(imagePoint.y);
+    }
     tag_detection_array.detections.push_back(tag_detection);
     detection_names.push_back(standaloneDescription->frame_name());
   }
@@ -364,10 +374,12 @@ AprilTagDetectionArray TagDetector::detectTags (
       // Some member tags of this bundle were detected, get the bundle's
       // position!
       TagBundleDescription& bundle = tag_bundle_descriptions_[j];
-
+      
+      std::vector<cv::Point3d > thisObjectPoints = bundleObjectPoints[bundleName];
+      std::vector<cv::Point2d > thisImagePoints = bundleImagePoints[bundleName];
       Eigen::Matrix4d transform =
-          getRelativeTransform(bundleObjectPoints[bundleName],
-                               bundleImagePoints[bundleName], fx, fy, cx, cy);
+          getRelativeTransform(thisObjectPoints,
+                               thisImagePoints, fx, fy, cx, cy);
       Eigen::Matrix3d rot = transform.block(0, 0, 3, 3);
       Eigen::Quaternion<double> rot_quaternion(rot);
 
@@ -379,6 +391,16 @@ AprilTagDetectionArray TagDetector::detectTags (
       tag_detection.pose = bundle_pose;
       tag_detection.id = bundle.bundleIds();
       tag_detection.size = bundle.bundleSizes();
+      for(int p=0; p<thisImagePoints.size(); p++) {
+        cv::Point3d objectPoint = thisObjectPoints[p];
+        tag_detection.object_points.push_back(objectPoint.x);
+        tag_detection.object_points.push_back(objectPoint.y);
+        tag_detection.object_points.push_back(objectPoint.z);
+        
+        cv::Point2d imagePoint = thisImagePoints[p];
+        tag_detection.image_points.push_back(imagePoint.x);
+        tag_detection.image_points.push_back(imagePoint.y);
+      }
       tag_detection_array.detections.push_back(tag_detection);
       detection_names.push_back(bundle.name());
     }
